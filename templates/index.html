@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Cozmo Control Panel</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: #0f0f14;
+      color: #e0e0e0;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 16px;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+      width: 100%;
+      max-width: 860px;
+    }
+
+    header h1 {
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      color: #ff6f00;
+    }
+
+    #status-dot {
+      width: 12px; height: 12px;
+      border-radius: 50%;
+      background: #555;
+      box-shadow: 0 0 6px #555;
+      transition: background .4s, box-shadow .4s;
+    }
+    #status-dot.online  { background: #00e676; box-shadow: 0 0 10px #00e676; }
+    #status-dot.offline { background: #f44336; box-shadow: 0 0 10px #f44336; }
+
+    #status-text { font-size: .8rem; color: #888; }
+
+    #battery-badge {
+      margin-left: auto;
+      font-size: .85rem;
+      padding: 4px 10px;
+      border-radius: 12px;
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      color: #ccc;
+      transition: all .3s;
+    }
+    #battery-badge.low {
+      background: #b71c1c;
+      color: #fff;
+      border-color: #f44336;
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+    #battery-badge.charging {
+      background: #1b5e20;
+      color: #fff;
+      border-color: #00e676;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(244,67,54,.7); }
+      50%      { box-shadow: 0 0 0 8px rgba(244,67,54,0); }
+    }
+
+    /* Big Go Home button */
+    .home-row {
+      display: flex;
+      gap: 10px;
+    }
+    .home-btn {
+      flex: 1;
+      background: linear-gradient(135deg, #00897b, #00695c);
+      border: none;
+      border-radius: 10px;
+      color: #fff;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 14px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .home-btn:hover  { filter: brightness(1.15); }
+    .home-btn:active { transform: scale(.97); }
+    .home-btn.leave  { background: linear-gradient(135deg, #455a64, #263238); }
+
+    .panel {
+      background: #1a1a24;
+      border: 1px solid #2a2a3a;
+      border-radius: 12px;
+      padding: 16px;
+      width: 100%;
+      max-width: 860px;
+      margin-bottom: 14px;
+    }
+
+    .panel h2 {
+      font-size: .75rem;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      color: #ff6f00;
+      margin-bottom: 12px;
+    }
+
+    /* Camera */
+    #camera-panel { text-align: center; }
+    #camera-feed {
+      width: 100%;
+      max-width: 640px;
+      border-radius: 8px;
+      border: 2px solid #2a2a3a;
+      background: #000;
+      image-rendering: pixelated;
+    }
+    #no-cam { color: #555; font-size: .9rem; padding: 60px 0; display: none; }
+
+    /* Drive D-pad */
+    .dpad {
+      display: grid;
+      grid-template-columns: repeat(3, 64px);
+      grid-template-rows: repeat(3, 64px);
+      gap: 6px;
+      justify-content: center;
+    }
+
+    .dpad-btn {
+      background: #252535;
+      border: 1px solid #3a3a55;
+      border-radius: 8px;
+      color: #ccc;
+      font-size: 1.4rem;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background .1s, transform .1s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .dpad-btn:active, .dpad-btn.pressed {
+      background: #ff6f00;
+      color: #fff;
+      transform: scale(.95);
+    }
+    .dpad-center {
+      background: #1f1f2e;
+      border-color: #555;
+      font-size: .7rem;
+      color: #888;
+    }
+
+    /* Sliders */
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 10px;
+    }
+    .slider-row label { width: 50px; font-size: .82rem; color: #aaa; }
+    .slider-row input[type=range] {
+      flex: 1;
+      accent-color: #ff6f00;
+      cursor: pointer;
+    }
+    .slider-row span { width: 42px; font-size: .82rem; color: #ff6f00; text-align: right; }
+
+    /* Lights */
+    .lights {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .light-btn {
+      width: 52px; height: 36px;
+      border-radius: 8px;
+      border: 2px solid transparent;
+      cursor: pointer;
+      font-size: .72rem;
+      font-weight: 600;
+      color: #fff;
+      transition: transform .1s, border-color .1s;
+    }
+    .light-btn:active { transform: scale(.92); }
+    .light-btn.active { border-color: #fff; }
+    #btn-green  { background: #1b5e20; }
+    #btn-red    { background: #b71c1c; }
+    #btn-blue   { background: #0d47a1; }
+    #btn-white  { background: #555; color: #fff; }
+    #btn-off    { background: #222; border-color: #555; }
+
+    /* TTS */
+    .say-row {
+      display: flex;
+      gap: 10px;
+    }
+    #say-input {
+      flex: 1;
+      background: #252535;
+      border: 1px solid #3a3a55;
+      border-radius: 8px;
+      color: #e0e0e0;
+      padding: 10px 14px;
+      font-size: .95rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    #say-input:focus { border-color: #ff6f00; }
+    #say-btn {
+      background: #ff6f00;
+      border: none;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 700;
+      padding: 0 22px;
+      font-size: .95rem;
+      cursor: pointer;
+      transition: background .15s;
+    }
+    #say-btn:hover { background: #e65100; }
+    #say-btn:active { background: #bf360c; }
+
+    /* Controls grid: drive + sliders side-by-side on larger screens */
+    .controls-grid {
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 14px;
+      align-items: start;
+    }
+    @media (max-width: 540px) {
+      .controls-grid { grid-template-columns: 1fr; }
+    }
+
+    /* Tricks */
+    .trick-cats {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .trick-cats button {
+      background: #252535;
+      border: 1px solid #3a3a55;
+      border-radius: 16px;
+      color: #ccc;
+      padding: 6px 12px;
+      font-size: .72rem;
+      letter-spacing: .05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .trick-cats button:hover { color: #fff; border-color: #ff6f00; }
+    .trick-cats button.active {
+      background: #ff6f00;
+      color: #fff;
+      border-color: #ff6f00;
+    }
+    .trick-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: 8px;
+    }
+    .trick-grid.hidden { display: none; }
+    .trick-btn {
+      background: linear-gradient(135deg, #252535, #1c1c2a);
+      border: 1px solid #3a3a55;
+      border-radius: 10px;
+      color: #e0e0e0;
+      padding: 12px 8px;
+      font-size: .82rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all .12s;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .trick-btn:hover {
+      border-color: #ff6f00;
+      color: #fff;
+      transform: translateY(-1px);
+    }
+    .trick-btn:active { transform: scale(.95); background: #ff6f00; }
+    .trick-btn .emoji {
+      display: block;
+      font-size: 1.4rem;
+      margin-bottom: 4px;
+    }
+    .trick-btn.danger { border-color: #b71c1c; color: #ff8a80; }
+    .trick-btn.danger:hover { background: #b71c1c; color: #fff; }
+    .trick-btn.toggle.on {
+      background: #00897b;
+      border-color: #00897b;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div id="status-dot"></div>
+  <h1>🤖 Cozmo Control Panel</h1>
+  <span id="status-text">Connecting…</span>
+  <span id="battery-badge" title="Battery">🔋 --</span>
+</header>
+
+<!-- Camera -->
+<div class="panel" id="camera-panel">
+  <h2>Camera</h2>
+  <img id="camera-feed" src="/video_feed" alt="Cozmo camera" />
+  <div id="no-cam">Camera not available</div>
+</div>
+
+<!-- Drive + sliders -->
+<div class="panel">
+  <h2>Drive</h2>
+  <div class="controls-grid">
+    <!-- D-pad -->
+    <div class="dpad">
+      <div></div>
+      <button class="dpad-btn" id="btn-fwd"  data-cmd="forward">▲</button>
+      <div></div>
+      <button class="dpad-btn" id="btn-left" data-cmd="left">◀</button>
+      <button class="dpad-btn dpad-center" id="btn-stop" data-cmd="stop">■</button>
+      <button class="dpad-btn" id="btn-right" data-cmd="right">▶</button>
+      <div></div>
+      <button class="dpad-btn" id="btn-bck"  data-cmd="backward">▼</button>
+      <div></div>
+    </div>
+
+    <!-- Head + Lift sliders -->
+    <div>
+      <div class="slider-row">
+        <label>Head</label>
+        <input type="range" id="head-slider" min="-25" max="25" value="0" step="1" />
+        <span id="head-val">0°</span>
+      </div>
+      <div class="slider-row">
+        <label>Lift</label>
+        <input type="range" id="lift-slider" min="0" max="1" value="0" step="0.01" />
+        <span id="lift-val">0%</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Backpack Lights -->
+<div class="panel">
+  <h2>Backpack Lights</h2>
+  <div class="lights">
+    <button class="light-btn" id="btn-green" onclick="setLight('green')">Green</button>
+    <button class="light-btn" id="btn-red"   onclick="setLight('red')">Red</button>
+    <button class="light-btn" id="btn-blue"  onclick="setLight('blue')">Blue</button>
+    <button class="light-btn" id="btn-white" onclick="setLight('white')">White</button>
+    <button class="light-btn" id="btn-off"   onclick="setLight('off')">Off</button>
+  </div>
+</div>
+
+<!-- Volume -->
+<div class="panel">
+  <h2>Volume</h2>
+  <div class="slider-row">
+    <label>Vol</label>
+    <input type="range" id="vol-slider" min="0" max="65535" value="32768" step="256" />
+    <span id="vol-val">50%</span>
+  </div>
+</div>
+
+<!-- TTS -->
+<div class="panel">
+  <h2>Say Something</h2>
+  <div class="say-row">
+    <input type="text" id="say-input" placeholder="Type what Cozmo should say…" maxlength="80" />
+    <button id="say-btn" onclick="sayText()">Speak</button>
+  </div>
+</div>
+
+<!-- Charger / Home -->
+<div class="panel">
+  <h2>🏠 Charger</h2>
+  <div class="home-row">
+    <button class="home-btn"       onclick="cmd('go_home', {})">🏠 Go Home (find charger)</button>
+    <button class="home-btn leave" onclick="cmd('leave_charger', {})">⏏️ Leave Charger</button>
+  </div>
+</div>
+
+<!-- Tricks -->
+<div class="panel">
+  <h2>🎉 Tricks &amp; Skills</h2>
+  <div class="trick-cats" id="trick-cats"></div>
+  <div id="trick-panels"></div>
+</div>
+
+<script>
+  // -------------------------------------------------------------------------
+  // Utility
+  // -------------------------------------------------------------------------
+  function cmd(action, extra) {
+    fetch('/cmd', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, ...extra }),
+    }).catch(() => {});
+  }
+
+  // -------------------------------------------------------------------------
+  // Status polling
+  // -------------------------------------------------------------------------
+  const dot  = document.getElementById('status-dot');
+  const stxt = document.getElementById('status-text');
+  const batt = document.getElementById('battery-badge');
+
+  function pollStatus() {
+    fetch('/status').then(r => r.json()).then(d => {
+      if (d.connected) {
+        dot.className = 'online';
+        stxt.textContent = 'Connected';
+      } else {
+        dot.className = 'offline';
+        stxt.textContent = 'Disconnected';
+      }
+      if (d.battery_pct != null) {
+        const icon = d.on_charger ? '⚡' : (d.battery_low ? '🪫' : '🔋');
+        batt.textContent = `${icon} ${d.battery_pct}% (${d.battery_v}V)`;
+        batt.className = '';
+        if (d.on_charger)   batt.classList.add('charging');
+        else if (d.battery_low) batt.classList.add('low');
+      } else {
+        batt.textContent = '🔋 --';
+        batt.className = '';
+      }
+    }).catch(() => {
+      dot.className = 'offline';
+      stxt.textContent = 'Server unreachable';
+    });
+  }
+  pollStatus();
+  setInterval(pollStatus, 3000);
+
+  // -------------------------------------------------------------------------
+  // Drive buttons – hold to drive, release to stop
+  // -------------------------------------------------------------------------
+  let driving = false;
+
+  function startDrive(action) {
+    driving = true;
+    document.getElementById('btn-' + actionToBtnId(action))?.classList.add('pressed');
+    cmd(action);
+  }
+
+  function stopDrive(action) {
+    if (!driving) return;
+    driving = false;
+    document.querySelectorAll('.dpad-btn').forEach(b => b.classList.remove('pressed'));
+    cmd('stop');
+  }
+
+  function actionToBtnId(a) {
+    return { forward:'fwd', backward:'bck', left:'left', right:'right', stop:'stop' }[a] || a;
+  }
+
+  document.querySelectorAll('.dpad-btn').forEach(btn => {
+    const action = btn.dataset.cmd;
+    if (action === 'stop') {
+      btn.addEventListener('click', () => cmd('stop'));
+      return;
+    }
+    // Mouse
+    btn.addEventListener('mousedown',  () => startDrive(action));
+    btn.addEventListener('mouseup',    () => stopDrive(action));
+    btn.addEventListener('mouseleave', () => stopDrive(action));
+    // Touch
+    btn.addEventListener('touchstart', (e) => { e.preventDefault(); startDrive(action); });
+    btn.addEventListener('touchend',   (e) => { e.preventDefault(); stopDrive(action); });
+  });
+
+  // Stop driving if mouse released anywhere outside a button
+  document.addEventListener('mouseup', () => { if (driving) stopDrive(); });
+
+  // Keyboard WASD / arrow keys
+  const keyMap = {
+    ArrowUp: 'forward', KeyW: 'forward',
+    ArrowDown: 'backward', KeyS: 'backward',
+    ArrowLeft: 'left', KeyA: 'left',
+    ArrowRight: 'right', KeyD: 'right',
+  };
+  const heldKeys = new Set();
+  document.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT') return;
+    const action = keyMap[e.code];
+    if (action && !heldKeys.has(e.code)) {
+      heldKeys.add(e.code);
+      startDrive(action);
+    }
+  });
+  document.addEventListener('keyup', e => {
+    if (keyMap[e.code]) {
+      heldKeys.delete(e.code);
+      if (heldKeys.size === 0) stopDrive();
+    }
+  });
+
+  // -------------------------------------------------------------------------
+  // Head slider
+  // -------------------------------------------------------------------------
+  const headSlider = document.getElementById('head-slider');
+  const headVal    = document.getElementById('head-val');
+  let headTimer;
+  headSlider.addEventListener('input', () => {
+    headVal.textContent = headSlider.value + '°';
+    clearTimeout(headTimer);
+    headTimer = setTimeout(() => cmd('head', { angle: parseInt(headSlider.value) }), 80);
+  });
+
+  // -------------------------------------------------------------------------
+  // Lift slider
+  // -------------------------------------------------------------------------
+  const liftSlider = document.getElementById('lift-slider');
+  const liftVal    = document.getElementById('lift-val');
+  let liftTimer;
+  liftSlider.addEventListener('input', () => {
+    const pct = Math.round(liftSlider.value * 100);
+    liftVal.textContent = pct + '%';
+    clearTimeout(liftTimer);
+    liftTimer = setTimeout(() => cmd('lift', { ratio: parseFloat(liftSlider.value) }), 80);
+  });
+
+  // -------------------------------------------------------------------------
+  // Lights
+  // -------------------------------------------------------------------------
+  function setLight(color) {
+    document.querySelectorAll('.light-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('btn-' + color)?.classList.add('active');
+    cmd('lights', { color });
+  }
+
+  // -------------------------------------------------------------------------
+  // TTS
+  // -------------------------------------------------------------------------
+  function sayText() {
+    const text = document.getElementById('say-input').value.trim();
+    if (!text) return;
+    cmd('say', { text });
+  }
+
+  document.getElementById('say-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') sayText();
+  });
+
+  // -------------------------------------------------------------------------
+  // Volume slider
+  // -------------------------------------------------------------------------
+  const volSlider = document.getElementById('vol-slider');
+  const volVal    = document.getElementById('vol-val');
+  let volTimer;
+  volSlider.addEventListener('input', () => {
+    const pct = Math.round(volSlider.value / 65535 * 100);
+    volVal.textContent = pct + '%';
+    clearTimeout(volTimer);
+    volTimer = setTimeout(() => cmd('volume', { level: parseInt(volSlider.value) }), 80);
+  });
+
+  // -------------------------------------------------------------------------
+  // Tricks  (emotive animations, autonomous behaviors, cube interactions)
+  // -------------------------------------------------------------------------
+  const TRICKS = {
+    "Emotions": [
+      ["😊","Happy","anim","CodeLabHappy"],
+      ["🤩","Excited","anim","CodeLabExcited"],
+      ["🎉","Celebrate","anim","CodeLabCelebrate"],
+      ["🏆","Win","anim","MajorWin"],
+      ["💀","Fail","anim","MajorFail"],
+      ["😞","Sad","anim","CodeLabUnhappy"],
+      ["😤","Frustrated","anim","CodeLabFrustrated"],
+      ["😮","Surprise","anim","CodeLabSurprise"],
+      ["🥱","Bored","anim","CodeLabBored"],
+      ["😴","Sleep","anim","CodeLabSleep"],
+      ["🤔","Thinking","anim","CodeLabThinking"],
+      ["🤷","I Dunno","anim","CodeLabIDK"],
+      ["🤢","Yuck","anim","CodeLabYuck"],
+      ["😱","Whoa","anim","CodeLabWhoa"],
+      ["🤧","Sneeze","anim","CodeLabSneeze"],
+      ["😬","Hiccup","anim","CodeLabHiccup"],
+    ],
+    "Party": [
+      ["💃","Dance","anim","CodeLabDancingMambo"],
+      ["🎊","Party Time","anim","CodeLabPartyTime"],
+      ["🎼","Conduct","anim","CodeLabConducting"],
+      ["🏅","Victory","anim","CodeLabVictory"],
+      ["🤸","Whee","anim","CodeLabWhee2"],
+      ["✨","Amazed","anim","CodeLabAmazed"],
+      ["😏","Curious","anim","CodeLabCurious"],
+      ["😆","React","anim","CodeLabReactHappy"],
+      ["🥳","123 Go!","anim","CodeLab123Go"],
+      ["🤪","Taka Taka","anim","CodeLabTakaTaka"],
+    ],
+    "Animals": [
+      ["🐱","Cat","anim","CodeLabCat"],
+      ["🐶","Dog","anim","CodeLabDog"],
+      ["🐮","Cow","anim","CodeLabCow"],
+      ["🦆","Duck","anim","CodeLabDuck"],
+      ["🐑","Sheep","anim","CodeLabSheep"],
+      ["🐔","Chicken","anim","CodeLabChicken"],
+      ["🐓","Rooster","anim","CodeLabRooster"],
+      ["🐸","Frog","anim","CodeLabFrog"],
+      ["🐘","Elephant","anim","CodeLabElephant"],
+      ["🐯","Tiger","anim","CodeLabTiger"],
+      ["🐍","Rattlesnake","anim","CodeLabRattleSnake"],
+    ],
+    "Spooky": [
+      ["🧛","Vampire","anim","CodeLabVampire"],
+      ["🧟","Zombie","anim","CodeLabZombie"],
+      ["👻","Ghoul","anim","CodeLabGhoul"],
+      ["😱","Scared","anim","CodeLabScaredCozmo"],
+      ["👹","Scary","anim","CodeLabScaryCozmo"],
+      ["🚒","Firetruck","anim","CodeLabFireTruck"],
+    ],
+    "Songs": [
+      ["⭐","Twinkle Twinkle","sing","twinkle"],
+      ["🎂","Happy Birthday","sing","happy_bday"],
+      ["🐑","Mary Had a Lamb","sing","mary"],
+      ["🎼","Ode to Joy","sing","ode_to_joy"],
+      ["🔔","Jingle Bells","sing","jingle"],
+      ["📯","Fanfare","sing","fanfare"],
+      ["🎵","Scale Up","sing","scale_up"],
+      ["🎶","Scale Down","sing","scale_down"],
+      ["🛎️","Doorbell","sing","doorbell"],
+      ["🚨","Alarm","sing","alarm"],
+      ["🎤","Hum 80bpm","anim","Singing_80bpm"],
+      ["🎤","Hum 100bpm","anim","Singing_100bpm"],
+      ["🎤","Hum 120bpm","anim","Singing_120bpm"],
+    ],
+    "Behaviors": [
+      ["👀","Look Around","behavior","look_around"],
+      ["🙂","Find Faces","behavior","find_faces"],
+      ["🐈","Pounce","behavior","pounce"],
+      ["🎲","Roll a Cube","behavior","roll_block"],
+      ["🏗️","Stack Cubes","behavior","stack_blocks"],
+      ["💥","Knock Over","behavior","knock_cubes"],
+    ],
+    "Moves": [
+      ["↩️","Spin Left","move","spin_left"],
+      ["↪️","Spin Right","move","spin_right"],
+      ["🌀","Spin 360","move","spin360"],
+      ["⬆️","Forward","move","fwd_short"],
+      ["⬇️","Backward","move","back_short"],
+    ],
+    "Cube Tricks": [
+      ["✋","Pick Up","cube","pickup"],
+      ["⬇️","Put Down","cube","place"],
+      ["🎲","Roll Cube","cube","roll"],
+      ["🤘","Pop a Wheelie","cube","wheelie"],
+    ],
+    "Autonomous": [
+      ["▶️","Freeplay ON","freeplay-on"],
+      ["⏹️","Freeplay OFF","freeplay-off","danger"],
+      ["🛑","Stop Everything","stop-all","danger"],
+    ],
+  };
+
+  const catsEl   = document.getElementById('trick-cats');
+  const panelsEl = document.getElementById('trick-panels');
+
+  Object.keys(TRICKS).forEach((cat, idx) => {
+    const tab = document.createElement('button');
+    tab.textContent = cat;
+    tab.dataset.cat = cat;
+    if (idx === 0) tab.classList.add('active');
+    tab.addEventListener('click', () => selectCategory(cat));
+    catsEl.appendChild(tab);
+
+    const grid = document.createElement('div');
+    grid.className = 'trick-grid' + (idx === 0 ? '' : ' hidden');
+    grid.dataset.cat = cat;
+
+    TRICKS[cat].forEach(item => {
+      const [emoji, label, action, payload, extraClass] = item;
+      const btn = document.createElement('button');
+      btn.className = 'trick-btn' + (extraClass ? ' ' + extraClass : '');
+      btn.innerHTML = `<span class="emoji">${emoji}</span>${label}`;
+      btn.addEventListener('click', () => runTrick(action, payload, btn));
+      grid.appendChild(btn);
+    });
+    panelsEl.appendChild(grid);
+  });
+
+  function selectCategory(cat) {
+    catsEl.querySelectorAll('button').forEach(b =>
+      b.classList.toggle('active', b.dataset.cat === cat));
+    panelsEl.querySelectorAll('.trick-grid').forEach(g =>
+      g.classList.toggle('hidden', g.dataset.cat !== cat));
+  }
+
+  function runTrick(action, payload, btn) {
+    if (action === 'anim')         cmd('anim',     { trigger: payload });
+    else if (action === 'behavior') cmd('behavior', { name: payload });
+    else if (action === 'move')     cmd('move',     { kind: payload });
+    else if (action === 'cube')     cmd('cube',     { kind: payload });
+    else if (action === 'sing')     cmd('sing',     { song: payload });
+    else if (action === 'freeplay-on')  { cmd('freeplay', { enable: true });  setFreeplay(true);  }
+    else if (action === 'freeplay-off') { cmd('freeplay', { enable: false }); setFreeplay(false); }
+    else if (action === 'stop-all')     { cmd('behavior_stop', {}); setFreeplay(false); }
+    // brief visual feedback
+    btn?.animate(
+      [{ filter: 'brightness(1.8)' }, { filter: 'brightness(1)' }],
+      { duration: 300 }
+    );
+  }
+
+  function setFreeplay(on) {
+    document.querySelectorAll('.trick-btn').forEach(b => {
+      if (b.textContent.includes('Freeplay ON')) b.classList.toggle('on', on);
+    });
+  }
+</script>
+</body>
+</html>

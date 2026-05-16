@@ -1,0 +1,24 @@
+# Virtual environments
+.venv/
+.venv37/
+__pycache__/
+*.pyc
+
+# Local tooling / large blobs
+platform-tools/
+app/
+
+# Test / scratch audio
+*.wav
+test_sapi.ps1
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Legacy / experiments
+cozmo_hello_pycozmo.py
+webapp.py

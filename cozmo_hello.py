@@ -3,7 +3,7 @@ from cozmo.run import TCPConnector
 
 # Connect directly to the phone via the Cozmo WiFi network (172.31.1.x)
 # The phone's IP on Cozmo_XXXXXX WiFi is 172.31.1.120
-connector = TCPConnector(tcp_port=5106, ip_addr='172.31.1.120')
+connector = TCPConnector(tcp_port=5106, ip_addr='10.166.115.204')
 
 def run(sdk_conn):
     robot = sdk_conn.wait_for_robot()
