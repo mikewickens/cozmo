@@ -6,25 +6,23 @@
   <title>Cozmo Control Panel</title>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; overflow: hidden; }
 
     body {
       background: #0f0f14;
       color: #e0e0e0;
       font-family: 'Segoe UI', system-ui, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 16px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      padding: 10px;
+      gap: 10px;
     }
 
     header {
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 16px;
       width: 100%;
-      max-width: 860px;
     }
 
     header h1 {
@@ -95,38 +93,68 @@
     .panel {
       background: #1a1a24;
       border: 1px solid #2a2a3a;
-      border-radius: 12px;
-      padding: 16px;
-      width: 100%;
-      max-width: 860px;
-      margin-bottom: 14px;
+      border-radius: 10px;
+      padding: 10px 12px;
     }
 
     .panel h2 {
-      font-size: .75rem;
+      font-size: .7rem;
       text-transform: uppercase;
       letter-spacing: .1em;
       color: #ff6f00;
-      margin-bottom: 12px;
+      margin-bottom: 8px;
     }
 
+    /* Dashboard layout: 2 columns, full height */
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+      gap: 10px;
+      min-height: 0;
+    }
+    .col {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-height: 0;
+    }
+    .col.right { overflow-y: auto; padding-right: 4px; }
+    /* tidy scrollbar */
+    .col.right::-webkit-scrollbar { width: 8px; }
+    .col.right::-webkit-scrollbar-thumb { background: #2a2a3a; border-radius: 4px; }
+
     /* Camera */
-    #camera-panel { text-align: center; }
-    #camera-feed {
+    #camera-panel {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      flex: 0 0 auto;
+    }
+    #camera-wrap {
+      position: relative;
       width: 100%;
-      max-width: 640px;
+      aspect-ratio: 16 / 9;
+      max-height: 55vh;
+      background: #000;
       border-radius: 8px;
       border: 2px solid #2a2a3a;
-      background: #000;
+      overflow: hidden;
+    }
+    #camera-feed {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
       image-rendering: pixelated;
+      display: block;
     }
     #no-cam { color: #555; font-size: .9rem; padding: 60px 0; display: none; }
 
     /* Drive D-pad */
     .dpad {
       display: grid;
-      grid-template-columns: repeat(3, 64px);
-      grid-template-rows: repeat(3, 64px);
+      grid-template-columns: repeat(3, 54px);
+      grid-template-rows: repeat(3, 54px);
       gap: 6px;
       justify-content: center;
     }
@@ -226,6 +254,27 @@
     }
     #say-btn:hover { background: #e65100; }
     #say-btn:active { background: #bf360c; }
+    #mic-btn {
+      background: #252535;
+      border: 1px solid #3a3a55;
+      border-radius: 8px;
+      color: #ccc;
+      font-size: 1.1rem;
+      padding: 0 14px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    #mic-btn:hover { border-color: #ff6f00; color: #fff; }
+    #mic-btn.listening {
+      background: #b71c1c;
+      border-color: #b71c1c;
+      color: #fff;
+      animation: micPulse 1s infinite;
+    }
+    @keyframes micPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(183, 28, 28, .7); }
+      50%      { box-shadow: 0 0 0 8px rgba(183, 28, 28, 0); }
+    }
 
     /* Controls grid: drive + sliders side-by-side on larger screens */
     .controls-grid {
@@ -233,6 +282,11 @@
       grid-template-columns: auto 1fr;
       gap: 14px;
       align-items: start;
+    }
+    @media (max-width: 900px) {
+      .dashboard { grid-template-columns: 1fr; }
+      html, body { overflow: auto; }
+      .col.right { overflow: visible; }
     }
     @media (max-width: 540px) {
       .controls-grid { grid-template-columns: 1fr; }
@@ -265,17 +319,17 @@
     }
     .trick-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-      gap: 8px;
+      grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+      gap: 6px;
     }
     .trick-grid.hidden { display: none; }
     .trick-btn {
       background: linear-gradient(135deg, #252535, #1c1c2a);
       border: 1px solid #3a3a55;
-      border-radius: 10px;
+      border-radius: 8px;
       color: #e0e0e0;
-      padding: 12px 8px;
-      font-size: .82rem;
+      padding: 8px 4px;
+      font-size: .72rem;
       font-weight: 500;
       cursor: pointer;
       text-align: center;
@@ -290,8 +344,8 @@
     .trick-btn:active { transform: scale(.95); background: #ff6f00; }
     .trick-btn .emoji {
       display: block;
-      font-size: 1.4rem;
-      margin-bottom: 4px;
+      font-size: 1.2rem;
+      margin-bottom: 2px;
     }
     .trick-btn.danger { border-color: #b71c1c; color: #ff8a80; }
     .trick-btn.danger:hover { background: #b71c1c; color: #fff; }
@@ -299,6 +353,145 @@
       background: #00897b;
       border-color: #00897b;
       color: #fff;
+    }
+
+    /* Quick-Say */
+    .quick-cats {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      margin-bottom: 8px;
+    }
+    .quick-cats button {
+      background: #252535;
+      border: 1px solid #3a3a55;
+      border-radius: 14px;
+      color: #ccc;
+      padding: 4px 10px;
+      font-size: .68rem;
+      cursor: pointer;
+    }
+    .quick-cats button.active {
+      background: #ff6f00;
+      color: #fff;
+      border-color: #ff6f00;
+    }
+    .quick-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+    .quick-btn {
+      background: #1c1c2a;
+      border: 1px solid #3a3a55;
+      border-radius: 6px;
+      color: #e0e0e0;
+      padding: 6px 8px;
+      font-size: .72rem;
+      cursor: pointer;
+      text-align: left;
+    }
+    .quick-btn:hover { border-color: #ff6f00; color: #fff; }
+    .quick-btn.special { background: linear-gradient(135deg, #2d5a3d, #1c3025); border-color: #4a8a5e; }
+    .quick-btn.alexa   { background: linear-gradient(135deg, #1a3a5a, #0f2236); border-color: #2196f3; }
+    .quick-btn.google  { background: linear-gradient(135deg, #5a2d4a, #36182e); border-color: #ea4335; }
+    .quick-last {
+      color: #888;
+      font-size: .7rem;
+      margin-top: 6px;
+      font-style: italic;
+      min-height: 1em;
+    }
+
+    /* Cubes panel */
+    .cube-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .cube-card {
+      background: #1c1c2a;
+      border: 1px solid #3a3a55;
+      border-radius: 8px;
+      padding: 8px 6px;
+      text-align: center;
+      transition: all .25s;
+      position: relative;
+    }
+    .cube-card.disconnected { opacity: .4; }
+    .cube-card.tapped {
+      transform: scale(1.06);
+      border-color: #ff6f00;
+      box-shadow: 0 0 12px #ff6f00;
+    }
+    .cube-card .title {
+      font-size: .72rem;
+      color: #ff6f00;
+      font-weight: 700;
+      letter-spacing: .05em;
+    }
+    .cube-card .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+      margin-right: 4px;
+      background: #555;
+      vertical-align: middle;
+    }
+    .cube-card.connected .dot { background: #00e676; box-shadow: 0 0 6px #00e676; }
+    .cube-card .stat { font-size: .72rem; color: #aaa; margin-top: 3px; }
+    .cube-card .swatch {
+      width: 100%; height: 14px;
+      border-radius: 4px;
+      margin-top: 6px;
+      background: #111;
+      border: 1px solid #333;
+    }
+    .cube-card.moving::after {
+      content: "📳";
+      position: absolute; top: 4px; right: 6px;
+      font-size: .8rem;
+    }
+    .cube-colors {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+    .cc-btn {
+      height: 26px;
+      border-radius: 6px;
+      border: 1px solid #3a3a55;
+      cursor: pointer;
+      font-size: .65rem;
+      color: #fff;
+      text-shadow: 0 0 3px rgba(0,0,0,.7);
+      transition: transform .1s;
+    }
+    .cc-btn:active { transform: scale(.92); }
+    .cube-patterns, .cube-games {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .cube-target {
+      display: flex; gap: 4px; margin-bottom: 6px;
+      font-size: .7rem;
+    }
+    .cube-target button {
+      flex: 1;
+      background: #252535;
+      border: 1px solid #3a3a55;
+      color: #ccc;
+      border-radius: 6px;
+      padding: 4px 0;
+      cursor: pointer;
+    }
+    .cube-target button.active {
+      background: #ff6f00; color: #fff; border-color: #ff6f00;
     }
   </style>
 </head>
@@ -311,92 +504,167 @@
   <span id="battery-badge" title="Battery">🔋 --</span>
 </header>
 
-<!-- Camera -->
-<div class="panel" id="camera-panel">
-  <h2>Camera</h2>
-  <img id="camera-feed" src="/video_feed" alt="Cozmo camera" />
-  <div id="no-cam">Camera not available</div>
-</div>
+<div class="dashboard">
 
-<!-- Drive + sliders -->
-<div class="panel">
-  <h2>Drive</h2>
-  <div class="controls-grid">
-    <!-- D-pad -->
-    <div class="dpad">
-      <div></div>
-      <button class="dpad-btn" id="btn-fwd"  data-cmd="forward">▲</button>
-      <div></div>
-      <button class="dpad-btn" id="btn-left" data-cmd="left">◀</button>
-      <button class="dpad-btn dpad-center" id="btn-stop" data-cmd="stop">■</button>
-      <button class="dpad-btn" id="btn-right" data-cmd="right">▶</button>
-      <div></div>
-      <button class="dpad-btn" id="btn-bck"  data-cmd="backward">▼</button>
-      <div></div>
+  <div class="col left">
+
+    <!-- Camera -->
+    <div class="panel" id="camera-panel">
+      <h2>Camera</h2>
+      <div id="camera-wrap">
+        <img id="camera-feed" src="/video_feed" alt="Cozmo camera" />
+      </div>
+      <div id="no-cam">Camera not available</div>
     </div>
 
-    <!-- Head + Lift sliders -->
-    <div>
-      <div class="slider-row">
-        <label>Head</label>
-        <input type="range" id="head-slider" min="-25" max="25" value="0" step="1" />
-        <span id="head-val">0°</span>
-      </div>
-      <div class="slider-row">
-        <label>Lift</label>
-        <input type="range" id="lift-slider" min="0" max="1" value="0" step="0.01" />
-        <span id="lift-val">0%</span>
+    <!-- Drive + sliders -->
+    <div class="panel">
+      <h2>Drive</h2>
+      <div class="controls-grid">
+        <!-- D-pad -->
+        <div class="dpad">
+          <div></div>
+          <button class="dpad-btn" id="btn-fwd"  data-cmd="forward">▲</button>
+          <div></div>
+          <button class="dpad-btn" id="btn-left" data-cmd="left">◀</button>
+          <button class="dpad-btn dpad-center" id="btn-stop" data-cmd="stop">■</button>
+          <button class="dpad-btn" id="btn-right" data-cmd="right">▶</button>
+          <div></div>
+          <button class="dpad-btn" id="btn-bck"  data-cmd="backward">▼</button>
+          <div></div>
+        </div>
+
+        <!-- Head + Lift sliders -->
+        <div>
+          <div class="slider-row">
+            <label>Head</label>
+            <input type="range" id="head-slider" min="-25" max="25" value="0" step="1" />
+            <span id="head-val">0°</span>
+          </div>
+          <div class="slider-row">
+            <label>Lift</label>
+            <input type="range" id="lift-slider" min="0" max="1" value="0" step="0.01" />
+            <span id="lift-val">0%</span>
+          </div>
+          <div class="slider-row">
+            <label>Vol</label>
+            <input type="range" id="vol-slider" min="0" max="65535" value="32768" step="256" />
+            <span id="vol-val">50%</span>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
-</div>
 
-<!-- Backpack Lights -->
-<div class="panel">
-  <h2>Backpack Lights</h2>
-  <div class="lights">
-    <button class="light-btn" id="btn-green" onclick="setLight('green')">Green</button>
-    <button class="light-btn" id="btn-red"   onclick="setLight('red')">Red</button>
-    <button class="light-btn" id="btn-blue"  onclick="setLight('blue')">Blue</button>
-    <button class="light-btn" id="btn-white" onclick="setLight('white')">White</button>
-    <button class="light-btn" id="btn-off"   onclick="setLight('off')">Off</button>
-  </div>
-</div>
+    <!-- Charger / Home -->
+    <div class="panel">
+      <h2>🏠 Charger</h2>
+      <div class="home-row">
+        <button class="home-btn"       onclick="cmd('go_home', {})">🏠 Go Home</button>
+        <button class="home-btn leave" onclick="cmd('leave_charger', {})">⏏️ Leave</button>
+      </div>
+    </div>
 
-<!-- Volume -->
-<div class="panel">
-  <h2>Volume</h2>
-  <div class="slider-row">
-    <label>Vol</label>
-    <input type="range" id="vol-slider" min="0" max="65535" value="32768" step="256" />
-    <span id="vol-val">50%</span>
-  </div>
-</div>
+  </div><!-- /col left -->
 
-<!-- TTS -->
-<div class="panel">
-  <h2>Say Something</h2>
-  <div class="say-row">
-    <input type="text" id="say-input" placeholder="Type what Cozmo should say…" maxlength="80" />
-    <button id="say-btn" onclick="sayText()">Speak</button>
-  </div>
-</div>
+  <div class="col right">
 
-<!-- Charger / Home -->
-<div class="panel">
-  <h2>🏠 Charger</h2>
-  <div class="home-row">
-    <button class="home-btn"       onclick="cmd('go_home', {})">🏠 Go Home (find charger)</button>
-    <button class="home-btn leave" onclick="cmd('leave_charger', {})">⏏️ Leave Charger</button>
-  </div>
-</div>
+    <!-- Tricks -->
+    <div class="panel">
+      <h2>🎉 Tricks &amp; Skills</h2>
+      <div class="trick-cats" id="trick-cats"></div>
+      <div id="trick-panels"></div>
+    </div>
 
-<!-- Tricks -->
-<div class="panel">
-  <h2>🎉 Tricks &amp; Skills</h2>
-  <div class="trick-cats" id="trick-cats"></div>
-  <div id="trick-panels"></div>
-</div>
+    <!-- Backpack Lights -->
+    <div class="panel">
+      <h2>Backpack Lights</h2>
+      <div class="lights">
+        <button class="light-btn" id="btn-green" onclick="setLight('green')">Green</button>
+        <button class="light-btn" id="btn-red"   onclick="setLight('red')">Red</button>
+        <button class="light-btn" id="btn-blue"  onclick="setLight('blue')">Blue</button>
+        <button class="light-btn" id="btn-white" onclick="setLight('white')">White</button>
+        <button class="light-btn" id="btn-off"   onclick="setLight('off')">Off</button>
+      </div>
+    </div>
+
+    <!-- Powered Cubes -->
+    <div class="panel" id="cubes-panel">
+      <h2>🎲 Powered Cubes</h2>
+      <div class="cube-row" id="cube-row">
+        <div class="cube-card" data-slot="1">
+          <div class="title"><span class="dot"></span>CUBE 1</div>
+          <div class="stat" data-stat="taps">Taps: 0</div>
+          <div class="swatch"></div>
+        </div>
+        <div class="cube-card" data-slot="2">
+          <div class="title"><span class="dot"></span>CUBE 2</div>
+          <div class="stat" data-stat="taps">Taps: 0</div>
+          <div class="swatch"></div>
+        </div>
+        <div class="cube-card" data-slot="3">
+          <div class="title"><span class="dot"></span>CUBE 3</div>
+          <div class="stat" data-stat="taps">Taps: 0</div>
+          <div class="swatch"></div>
+        </div>
+      </div>
+
+      <div class="cube-target" id="cube-target">
+        <button data-tgt="all" class="active">All</button>
+        <button data-tgt="1">#1</button>
+        <button data-tgt="2">#2</button>
+        <button data-tgt="3">#3</button>
+      </div>
+
+      <div class="cube-colors" id="cube-colors"></div>
+
+      <div class="cube-patterns">
+        <button class="trick-btn" onclick="cubeLight('rainbow')">🌈 Rainbow Rotate</button>
+        <button class="trick-btn" onclick="cubeLight('chase')">🏃 Chase</button>
+        <button class="trick-btn" onclick="cubeLight('breathe')">💨 Breathe</button>
+        <button class="trick-btn" onclick="cubeLight('party')">🎉 Party</button>
+        <button class="trick-btn danger" onclick="cubeLight('off')">⏹ Lights Off</button>
+        <button class="trick-btn" onclick="cmd('cube_connect',{})">🔄 Reconnect</button>
+      </div>
+
+      <div class="cube-games">
+        <button class="trick-btn toggle" id="react-btn" onclick="toggleReact()">🤖 Tap-React: OFF</button>
+        <button class="trick-btn" onclick="cmd('cube_reset_taps',{})">🧹 Reset Taps</button>
+        <button class="trick-btn" onclick="cmd('game',{kind:'simon',rounds:8})">🧠 Simon Says</button>
+        <button class="trick-btn" onclick="cmd('game',{kind:'quicktap',rounds:5})">⚡ Quick Tap</button>
+      </div>
+    </div>
+
+    <!-- TTS -->
+    <div class="panel">
+      <h2>Say Something</h2>
+      <div class="say-row">
+        <input type="text" id="say-input" placeholder="Type what Cozmo should say…" maxlength="80" />
+        <button id="say-btn" onclick="sayText()">Speak</button>
+        <button id="mic-btn" onclick="toggleMic()" title="Hold to dictate">🎤</button>
+      </div>
+      <div class="slider-row">
+        <label>🔊 Speech</label>
+        <input type="range" id="speech-vol-slider" min="0" max="100" value="100" step="5" />
+        <span id="speech-vol-val">100%</span>
+      </div>
+      <div class="slider-row">
+        <label>🎵 Pitch</label>
+        <input type="range" id="pitch-slider" min="-1" max="1" value="0" step="0.05" />
+        <span id="pitch-val">0</span>
+      </div>
+      <div class="slider-row">
+        <label>⏱ Speed</label>
+        <input type="range" id="speed-slider" min="0.5" max="2" value="1" step="0.05" />
+        <span id="speed-val">1.0×</span>
+      </div>
+      <div class="quick-cats" id="quick-cats"></div>
+      <div class="quick-grid" id="quick-grid"></div>
+      <div class="quick-last" id="quick-last"></div>
+    </div>
+
+  </div><!-- /col right -->
+
+</div><!-- /dashboard -->
 
 <script>
   // -------------------------------------------------------------------------
@@ -544,10 +812,13 @@
   // -------------------------------------------------------------------------
   // TTS
   // -------------------------------------------------------------------------
+  let _pitch = 0.0;
+  let _speed = 1.0;
+
   function sayText() {
     const text = document.getElementById('say-input').value.trim();
     if (!text) return;
-    cmd('say', { text });
+    cmd('say', { text, voice_pitch: _pitch, duration_scalar: _speed });
   }
 
   document.getElementById('say-input').addEventListener('keydown', e => {
@@ -555,7 +826,90 @@
   });
 
   // -------------------------------------------------------------------------
-  // Volume slider
+  // 🎤 Browser mic dictation (Web Speech API — works in Chrome/Edge)
+  // -------------------------------------------------------------------------
+  let _recog = null;
+  let _listening = false;
+
+  function toggleMic() {
+    const btn = document.getElementById('mic-btn');
+    const SR  = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { alert('Mic dictation needs Chrome or Edge.'); return; }
+
+    if (_listening) { _recog?.stop(); return; }
+
+    _recog = new SR();
+    _recog.lang            = 'en-GB';
+    _recog.interimResults  = true;
+    _recog.continuous      = false;
+    _recog.maxAlternatives = 1;
+
+    const input = document.getElementById('say-input');
+    let finalText = '';
+
+    _recog.onstart = () => {
+      _listening = true;
+      btn.classList.add('listening');
+      btn.textContent = '🔴';
+      input.placeholder = 'Listening… speak now';
+    };
+    _recog.onresult = (ev) => {
+      let interim = '';
+      for (let i = ev.resultIndex; i < ev.results.length; i++) {
+        const t = ev.results[i][0].transcript;
+        if (ev.results[i].isFinal) finalText += t;
+        else interim += t;
+      }
+      input.value = (finalText + interim).trim();
+    };
+    _recog.onerror = (e) => {
+      console.warn('mic error', e);
+      input.placeholder = 'Mic error: ' + e.error;
+    };
+    _recog.onend = () => {
+      _listening = false;
+      btn.classList.remove('listening');
+      btn.textContent = '🎤';
+      input.placeholder = 'Type what Cozmo should say…';
+      if (input.value.trim()) sayText();
+    };
+
+    _recog.start();
+  }
+
+  // Speech volume — applied before each say (separate from system volume).
+  const spSlider = document.getElementById('speech-vol-slider');
+  const spVal    = document.getElementById('speech-vol-val');
+  let spTimer;
+  spSlider.addEventListener('input', () => {
+    spVal.textContent = spSlider.value + '%';
+    clearTimeout(spTimer);
+    spTimer = setTimeout(
+      () => cmd('speech_volume', { level: spSlider.value / 100 }),
+      80
+    );
+  });
+  // Push initial max-volume to robot on load
+  cmd('speech_volume', { level: 1.0 });
+
+  // Pitch — sent with next say
+  const pitchSlider = document.getElementById('pitch-slider');
+  const pitchVal    = document.getElementById('pitch-val');
+  pitchSlider.addEventListener('input', () => {
+    _pitch = parseFloat(pitchSlider.value);
+    pitchVal.textContent = _pitch.toFixed(2);
+  });
+
+  // Speed (duration scalar — higher = slower)
+  const speedSlider = document.getElementById('speed-slider');
+  const speedVal    = document.getElementById('speed-val');
+  speedSlider.addEventListener('input', () => {
+    _speed = parseFloat(speedSlider.value);
+    speedVal.textContent = _speed.toFixed(2) + '×';
+  });
+
+  // -------------------------------------------------------------------------
+  // Volume slider (system audio — songs, animations)
   // -------------------------------------------------------------------------
   const volSlider = document.getElementById('vol-slider');
   const volVal    = document.getElementById('vol-val');
@@ -566,6 +920,10 @@
     clearTimeout(volTimer);
     volTimer = setTimeout(() => cmd('volume', { level: parseInt(volSlider.value) }), 80);
   });
+  // Bump system volume to max on load too
+  volSlider.value = 65535;
+  volVal.textContent = '100%';
+  cmd('volume', { level: 65535 });
 
   // -------------------------------------------------------------------------
   // Tricks  (emotive animations, autonomous behaviors, cube interactions)
@@ -657,6 +1015,12 @@
       ["⬇️","Put Down","cube","place"],
       ["🎲","Roll Cube","cube","roll"],
       ["🤘","Pop a Wheelie","cube","wheelie"],
+      ["🏗️","Stack 2","cube","stack"],
+      ["🗼","Pyramid (3)","cube","pyramid"],
+      ["🥾","Tap Cube","cube","tap"],
+      ["💢","Push Cube","cube","push"],
+      ["🧭","Align","cube","align"],
+      ["🚗","Drive To","cube","drive_to"],
     ],
     "Autonomous": [
       ["▶️","Freeplay ON","freeplay-on"],
@@ -696,7 +1060,25 @@
       b.classList.toggle('active', b.dataset.cat === cat));
     panelsEl.querySelectorAll('.trick-grid').forEach(g =>
       g.classList.toggle('hidden', g.dataset.cat !== cat));
+    // Reflect in URL so tabs are deep-linkable / screenshot-friendly
+    try {
+      if (location.hash.slice(1) !== cat) {
+        history.replaceState(null, '', '#' + encodeURIComponent(cat));
+      }
+    } catch (e) {}
   }
+
+  // Honor URL hash on load (e.g. #Cube%20Tricks)
+  (function applyHashTab() {
+    const fromHash = decodeURIComponent((location.hash || '').slice(1));
+    if (!fromHash) return;
+    const btn = catsEl.querySelector(`button[data-cat="${fromHash.replace(/"/g, '\\"')}"]`);
+    if (btn) selectCategory(fromHash);
+  })();
+  window.addEventListener('hashchange', () => {
+    const cat = decodeURIComponent((location.hash || '').slice(1));
+    if (cat) selectCategory(cat);
+  });
 
   function runTrick(action, payload, btn) {
     if (action === 'anim')         cmd('anim',     { trigger: payload });
@@ -719,6 +1101,192 @@
       if (b.textContent.includes('Freeplay ON')) b.classList.toggle('on', on);
     });
   }
+
+  // -------------------------------------------------------------------------
+  // Quick-Say: preset phrases + smart endpoints (weather/joke/random)
+  // -------------------------------------------------------------------------
+  const QUICK_PHRASES = {
+    'Greetings': [
+      ['Hello there!', ''],
+      ['Hi Mike, how are you today?', ''],
+      ['Goodbye! See you later.', ''],
+      ['Good morning! Did you sleep well?', ''],
+      ['Good night, sleep tight.', ''],
+      ['Welcome home!', ''],
+      ['Thank you very much.', ''],
+      ['I love you.', 'special'],
+    ],
+    'Fun': [
+      ['Tell me a joke!',           'special, fetch-joke'],
+      ['What is the weather?',      'special, fetch-weather'],
+      ['Say something random',      'special, fetch-random'],
+      ['Beep boop beep.', ''],
+      ['I am the best robot.', ''],
+      ['I am hungry for batteries.', ''],
+      ['Did you know I am very smart?', ''],
+      ['Achievement unlocked!', ''],
+    ],
+    'Alexa': [
+      ['Alexa, turn on the lights.',           'alexa'],
+      ['Alexa, turn off the lights.',          'alexa'],
+      ['Alexa, dim the lights to fifty percent.', 'alexa'],
+      ['Alexa, what is the weather?',          'alexa'],
+      ['Alexa, set a timer for five minutes.', 'alexa'],
+      ['Alexa, play some music.',              'alexa'],
+      ['Alexa, stop.',                         'alexa'],
+      ['Alexa, what time is it?',              'alexa'],
+    ],
+    'Google': [
+      ['Hey Google, play some house music.',   'google'],
+      ['Hey Google, turn on the TV.',          'google'],
+      ['Hey Google, what is the news?',        'google'],
+      ['Hey Google, set the thermostat to twenty degrees.', 'google'],
+      ['Hey Google, tell me a joke.',          'google'],
+      ['Hey Google, what is the weather tomorrow?', 'google'],
+      ['Hey Google, turn off the lights.',     'google'],
+      ['Hey Google, good morning.',            'google'],
+    ],
+  };
+
+  let _quickCat = 'Greetings';
+
+  function renderQuick() {
+    const cats = document.getElementById('quick-cats');
+    const grid = document.getElementById('quick-grid');
+    cats.innerHTML = '';
+    Object.keys(QUICK_PHRASES).forEach(name => {
+      const b = document.createElement('button');
+      b.textContent = name;
+      if (name === _quickCat) b.classList.add('active');
+      b.onclick = () => { _quickCat = name; renderQuick(); };
+      cats.appendChild(b);
+    });
+    grid.innerHTML = '';
+    QUICK_PHRASES[_quickCat].forEach(([text, cls]) => {
+      const b = document.createElement('button');
+      b.className = 'quick-btn ' + (cls || '').replace(/fetch-\S+/g, '').trim();
+      b.textContent = text;
+      b.onclick = () => quickSay(text, cls || '');
+      grid.appendChild(b);
+    });
+  }
+
+  function quickFlash(msg) {
+    const el = document.getElementById('quick-last');
+    if (el) el.textContent = msg;
+  }
+
+  async function quickSay(text, cls) {
+    quickFlash('🗣️  ' + text);
+    // Alexa/Google buttons use the PC's voice (clearer for smart speakers)
+    const usePC = cls.includes('alexa') || cls.includes('google') || cls.includes('pc');
+    let endpoint, body;
+    if      (cls.includes('fetch-weather')) { endpoint = '/weather';        body = {}; }
+    else if (cls.includes('fetch-joke'))    { endpoint = '/joke';           body = {}; }
+    else if (cls.includes('fetch-random'))  { endpoint = '/random_phrase';  body = {}; }
+    else if (usePC)                         { endpoint = '/pcsay';          body = { text, volume: 100, rate: 0 }; }
+    else                                    { endpoint = '/quicksay';       body = { text }; }
+    try {
+      const r = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const j = await r.json();
+      if (j.said) quickFlash('🗣️  ' + j.said);
+    } catch (e) {
+      quickFlash('⚠️  ' + e);
+    }
+  }
+
+  renderQuick();
+
+  // -------------------------------------------------------------------------
+  // Powered Cubes
+  // -------------------------------------------------------------------------
+  const CUBE_COLORS = [
+    ['red',     '#d32f2f'],
+    ['orange',  '#ff6f00'],
+    ['yellow',  '#fbc02d'],
+    ['green',   '#388e3c'],
+    ['cyan',    '#00bcd4'],
+    ['blue',    '#1976d2'],
+    ['purple',  '#7b1fa2'],
+    ['magenta', '#c2185b'],
+    ['white',   '#cccccc'],
+    ['off',     '#222'],
+  ];
+  const COLOR_HEX = Object.fromEntries(CUBE_COLORS);
+  let _cubeTarget = 'all';
+  let _prevTaps   = {1:0, 2:0, 3:0};
+
+  // Build color swatches
+  (function buildCubeColors() {
+    const wrap = document.getElementById('cube-colors');
+    if (!wrap) return;
+    CUBE_COLORS.forEach(([name, hex]) => {
+      const b = document.createElement('button');
+      b.className = 'cc-btn';
+      b.style.background = hex;
+      b.textContent = name;
+      b.onclick = () => cubeLight(name);
+      wrap.appendChild(b);
+    });
+  })();
+
+  // Target selector (all / 1 / 2 / 3)
+  document.querySelectorAll('#cube-target button').forEach(btn => {
+    btn.onclick = () => {
+      _cubeTarget = btn.dataset.tgt;
+      document.querySelectorAll('#cube-target button')
+        .forEach(b => b.classList.toggle('active', b === btn));
+    };
+  });
+
+  function cubeLight(color) {
+    // Patterns ignore the slot selector (they always run on all connected cubes)
+    const isPattern = ['rainbow','chase','breathe','party'].includes(color);
+    cmd('cube_light', { slot: isPattern ? 'all' : _cubeTarget, color });
+  }
+
+  function toggleReact() {
+    fetch('/cubes').then(r=>r.json()).then(d => {
+      const next = !d.react;
+      cmd('cube_react', { enable: next });
+      const b = document.getElementById('react-btn');
+      b.textContent = '🤖 Tap-React: ' + (next ? 'ON' : 'OFF');
+      b.classList.toggle('on', next);
+    });
+  }
+
+  function pollCubes() {
+    fetch('/cubes').then(r => r.json()).then(d => {
+      [1,2,3].forEach(slot => {
+        const card = document.querySelector(`.cube-card[data-slot="${slot}"]`);
+        if (!card) return;
+        const s = d.cubes[slot] || {};
+        card.classList.toggle('connected', !!s.connected);
+        card.classList.toggle('disconnected', !s.connected);
+        card.classList.toggle('moving', !!s.moving);
+        card.querySelector('[data-stat="taps"]').textContent = 'Taps: ' + (s.taps || 0);
+        card.querySelector('.swatch').style.background = COLOR_HEX[s.color] || '#111';
+        // Flash on new tap
+        if ((s.taps || 0) > _prevTaps[slot]) {
+          card.classList.add('tapped');
+          setTimeout(() => card.classList.remove('tapped'), 300);
+        }
+        _prevTaps[slot] = s.taps || 0;
+      });
+      // Sync react button
+      const rb = document.getElementById('react-btn');
+      if (rb) {
+        rb.textContent = '🤖 Tap-React: ' + (d.react ? 'ON' : 'OFF');
+        rb.classList.toggle('on', !!d.react);
+      }
+    }).catch(() => {});
+  }
+  pollCubes();
+  setInterval(pollCubes, 700);
 </script>
 </body>
 </html>

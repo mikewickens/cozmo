@@ -7,6 +7,16 @@ behaviors, and auto-docking, all from any browser on your network.
 ![python](https://img.shields.io/badge/python-3.7-blue)
 ![sdk](https://img.shields.io/badge/cozmo--sdk-1.4.10-orange)
 
+## 📸 Screenshots
+
+| Main dashboard | Cube Tricks |
+| :--: | :--: |
+| ![overview](docs/screenshots/01-overview.png) | ![cube tricks](docs/screenshots/02-cube-tricks.png) |
+
+| Songs | Party | Behaviors | Autonomous |
+| :--: | :--: | :--: | :--: |
+| ![songs](docs/screenshots/03-songs.png) | ![party](docs/screenshots/04-party.png) | ![behaviors](docs/screenshots/05-behaviors.png) | ![autonomous](docs/screenshots/06-autonomous.png) |
+
 ## ✨ Features
 
 - 📷 **Live MJPEG camera feed**
